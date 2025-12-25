@@ -1,0 +1,37 @@
+[Unit]
+Description=WebLogic Node Manager for eppm_domain
+After=network.target
+
+[Service]
+Type=simple
+User=oracle
+Group=oinstall
+WorkingDirectory=/u01/app/weblogic/user_projects/domains/eppm_domain
+
+# Set Oracle/WebLogic environment
+Environment="JAVA_HOME=/u01/app/java"
+Environment="MW_HOME=/u01/app/weblogic"
+Environment="WL_HOME=/u01/app/weblogic/wlserver"
+Environment="DOMAIN_HOME=/u01/app/weblogic/user_projects/domains/eppm_domain"
+
+# Start Node Manager (runs in foreground)
+ExecStart=/bin/bash /u01/app/weblogic/user_projects/domains/eppm_domain/bin/startNodeManager.sh
+
+# Stop Node Manager
+ExecStop=/bin/bash /u01/app/weblogic/user_projects/domains/eppm_domain/bin/stopNodeManager.sh
+
+# Restart policy
+Restart=on-failure
+RestartSec=30
+
+# Timeouts
+TimeoutStartSec=300
+TimeoutStopSec=180
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nodemanager
+
+[Install]
+WantedBy=multi-user.target
