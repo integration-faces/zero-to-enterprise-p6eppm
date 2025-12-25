@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+#===============================================================================
+# WebLogic Managed Server Creation Template (WLST Online Mode)
+#
+# Creates managed server definitions in an existing domain
+# Use this for adding servers to a domain after initial creation
+#
+# Usage: $MW_HOME/oracle_common/common/bin/wlst.sh create-servers.py
+#===============================================================================
+
+import os
+import sys
+
+print("=" * 60)
+print("WebLogic Managed Server Creation - WLST Online Mode")
+print("=" * 60)
+
+#===============================================================================
+# Configuration
+#===============================================================================
+
+ADMIN_URL = 't3://{{HOSTS_HOST1}}:{{DOMAIN_ADMIN_PORT}}'
+ADMIN_USER = '{{DOMAIN_ADMIN_USER}}'
+ADMIN_PASSWORD = '{{DOMAIN_ADMIN_PASSWORD}}'
+
+# Clustering enabled
+CLUSTERING_ENABLED = {{CLUSTERS_ENABLED}}
+
+# Server definitions
+# Format: [{'name': 'server1', 'port': 8001, 'machine': 'machine-host', 
+#           'cluster': 'ClusterName', 'listen_address': ''}, ...]
+MANAGED_SERVERS = {{SERVERS_LIST}}
+
+#===============================================================================
+# Server Creation Logic
+#===============================================================================
+
+def create_servers():
+    """Create managed server definitions in the domain."""
+    
+    print("\nConnecting to Admin Server...")
+    connect(ADMIN_USER, ADMIN_PASSWORD, ADMIN_URL)
+    
+    print("\nStarting edit session...")
+    edit()
+    startEdit()
+    
+    try:
+        for server in MANAGED_SERVERS:
+            print("\nCreating server: " + server['name'])
+            
+            # Check if server already exists
+            cd('/')
+            servers = ls('/Servers', returnMap='true')
+            if server['name'] in servers:
+                print("  Server already exists, skipping...")
+                continue
+            
+            # Create server
+            cd('/')
+            cmo.createServer(server['name'])
+            
+            # Configure server
+            cd('/Servers/' + server['name'])
+            cmo.setListenPort(int(server['port']))
+            
+            # Set listen address (empty = listen on all interfaces)
+            listen_address = server.get('listen_address', '')
+            cmo.setListenAddress(listen_address)
+            
+            # Assign to machine if specified
+            if server.get('machine'):
+                try:
+                    machine_mbean = getMBean('/Machines/' + server['machine'])
+                    cmo.setMachine(machine_mbean)
+                    print("  Assigned to machine: " + server['machine'])
+                except:
+                    print("  WARNING: Machine not found: " + server['machine'])
+            
+            # Assign to cluster if specified and clustering is enabled
+            if CLUSTERING_ENABLED and server.get('cluster'):
+                try:
+                    cluster_mbean = getMBean('/Clusters/' + server['cluster'])
+                    cmo.setCluster(cluster_mbean)
+                    print("  Assigned to cluster: " + server['cluster'])
+                except:
+                    print("  WARNING: Cluster not found: " + server['cluster'])
+            
+            print("  Server created: " + server['name'] + " (port " + str(server['port']) + ")")
+        
+        print("\nSaving changes...")
+        save()
+        activate()
+        
+        print("\n" + "=" * 60)
+        print("Server creation completed successfully!")
+        print("=" * 60)
+        
+    except Exception, e:
+        print("\nERROR: Server creation failed!")
+        print("Exception: " + str(e))
+        undo('true', 'y')
+        raise
+    
+    finally:
+        disconnect()
+
+#===============================================================================
+# Main Entry Point
+#===============================================================================
+
+if __name__ == '__main__' or True:
+    try:
+        create_servers()
+        sys.exit(0)
+    except Exception, e:
+        print("\nERROR: " + str(e))
+        sys.exit(1)

@@ -1,0 +1,536 @@
+===============================================================================
+ WebLogic Domain Creation Automation - Phase 2
+ CONFIGURATION GUIDE
+===============================================================================
+
+This guide explains all configuration options available in domain.conf files.
+
+
+CONFIGURATION FILE FORMAT
+=========================
+
+- INI-style format with [SECTION] headers
+- Key=Value pairs (case-sensitive keys)
+- Comments start with # 
+- Empty lines are ignored
+- Values cannot span multiple lines
+
+
+SECTION: [DOMAIN]
+=================
+
+Required domain-level configuration.
+
+DOMAIN_NAME
+-----------
+Type: String (alphanumeric, underscore, hyphen)
+Max Length: 64 characters
+Required: Yes
+Example: DOMAIN_NAME=eppm_domain
+
+The WebLogic domain name. Must start with a letter.
+Used for directory names and domain identification.
+
+
+DOMAIN_HOME
+-----------
+Type: Path (absolute)
+Required: Yes
+Example: DOMAIN_HOME=/app/fmw/user_projects/domains/eppm_domain
+
+Full path where domain will be created.
+Parent directory must exist or be creatable.
+
+
+ADMIN_SERVER_NAME
+-----------------
+Type: String
+Default: AdminServer
+Example: ADMIN_SERVER_NAME=AdminServer
+
+Name of the Administration Server.
+Usually left as "AdminServer" (convention).
+
+
+ADMIN_PORT
+----------
+Type: Integer (1024-65535)
+Default: 7001
+Example: ADMIN_PORT=7001
+
+Listen port for the Admin Server.
+Standard WebLogic default is 7001.
+
+
+ADMIN_USER
+----------
+Type: String
+Default: weblogic
+Example: ADMIN_USER=weblogic
+
+WebLogic administrator username.
+Created in the default security realm.
+
+
+ADMIN_PASSWORD
+--------------
+Type: String
+Required: Yes (unless WLS_ADMIN_PASSWORD env var set)
+Example: ADMIN_PASSWORD=SecurePass123
+
+Administrator password. SECURITY NOTE: Prefer using
+WLS_ADMIN_PASSWORD environment variable for production.
+
+
+PRODUCTION_MODE
+---------------
+Type: Boolean (true/false)
+Default: false
+Example: PRODUCTION_MODE=true
+
+  false: Development mode
+         - Auto-deploy enabled
+         - Faster restarts
+         - More debugging info
+         
+  true:  Production mode
+         - No auto-deploy
+         - Optimized for performance
+         - Required for production
+
+
+JAVA_HOME
+---------
+Type: Path (absolute)
+Required: Yes
+Example: JAVA_HOME=/app/jdk1.8.0_471
+
+Path to JDK installation.
+Must match WebLogic certification matrix.
+
+
+WEBLOGIC_HOME
+-------------
+Type: Path (absolute)
+Required: Yes
+Example: WEBLOGIC_HOME=/app/fmw/wlserver
+
+Path to WebLogic Server installation directory.
+Contains: common/, server/, etc.
+
+
+MIDDLEWARE_HOME
+---------------
+Type: Path (absolute)
+Required: Yes
+Example: MIDDLEWARE_HOME=/app/fmw
+
+Oracle Fusion Middleware home directory.
+Parent of WebLogic and other FMW installations.
+
+
+SECTION: [ADMIN_SERVER]
+=======================
+
+Admin Server network configuration.
+
+LISTEN_ADDRESS
+--------------
+Type: String (hostname or IP)
+Default: 0.0.0.0
+Example: LISTEN_ADDRESS=0.0.0.0
+
+  0.0.0.0: Listen on all interfaces
+  hostname: Listen on specific interface
+  IP: Listen on specific IP
+
+
+LISTEN_PORT
+-----------
+Type: Integer (1024-65535)
+Default: 7001
+Example: LISTEN_PORT=7001
+
+Same as ADMIN_PORT in [DOMAIN] section.
+
+
+SSL_ENABLED
+-----------
+Type: Boolean (true/false)
+Default: false
+Example: SSL_ENABLED=false
+
+Enable SSL/TLS for Admin Server.
+Requires additional certificate configuration.
+
+
+SSL_PORT
+--------
+Type: Integer (1024-65535)
+Default: 7002
+Example: SSL_PORT=7002
+
+SSL listen port (when SSL_ENABLED=true).
+
+
+SECTION: [CLUSTERS]
+===================
+
+Optional clustering configuration.
+
+ENABLED
+-------
+Type: Boolean (true/false)
+Default: false
+Example: ENABLED=true
+
+Enable/disable clustering entirely.
+When false, all servers run standalone.
+
+
+CLUSTER_COUNT
+-------------
+Type: Integer (1+)
+Example: CLUSTER_COUNT=4
+
+Number of clusters to create.
+Each cluster is defined with CLUSTER<N>_* settings.
+
+
+CLUSTER<N>_NAME
+---------------
+Type: String
+Example: CLUSTER1_NAME=P6Cluster
+
+Name of cluster N. Must be unique.
+
+
+CLUSTER<N>_MESSAGING_MODE
+-------------------------
+Type: String (unicast/multicast)
+Default: unicast
+Example: CLUSTER1_MESSAGING_MODE=unicast
+
+  unicast: Recommended. No network multicast required.
+  multicast: Requires network multicast support.
+
+
+CLUSTER<N>_MULTICAST_ADDRESS
+----------------------------
+Type: IP Address
+Example: CLUSTER1_MULTICAST_ADDRESS=239.192.0.1
+
+Required only if MESSAGING_MODE=multicast.
+Must be valid multicast address (224.0.0.0 - 239.255.255.255).
+
+
+CLUSTER<N>_MULTICAST_PORT
+-------------------------
+Type: Integer
+Example: CLUSTER1_MULTICAST_PORT=7001
+
+Multicast port (if using multicast mode).
+
+
+CLUSTER<N>_SERVERS
+------------------
+Type: Comma-separated server names
+Example: CLUSTER1_SERVERS=server1,server2,server3
+
+Optional. Servers can also be assigned via [MANAGED_SERVERS].
+
+
+SECTION: [HOSTS]
+================
+
+Host definitions for the deployment.
+
+HOST_COUNT
+----------
+Type: Integer (1+)
+Required: Yes
+Example: HOST_COUNT=2
+
+Number of hosts in the deployment.
+
+
+HOST<N>
+-------
+Type: String (hostname or IP)
+Required: Yes (for N = 1 to HOST_COUNT)
+Example: HOST1=xpmvp01
+
+Hostname or IP of host N.
+Must be resolvable from all hosts.
+
+
+SECTION: [MACHINES]
+===================
+
+WebLogic Machine definitions for Node Manager.
+
+MACHINE<N>
+----------
+Type: Colon-separated values
+Format: machine_name:hostname:nodemanager_port
+Example: MACHINE1=machine-xpmvp01:xpmvp01:5556
+
+  machine_name: WebLogic machine name
+  hostname: Host where Node Manager runs
+  nodemanager_port: Node Manager listen port (usually 5556)
+
+
+SECTION: [MANAGED_SERVERS]
+==========================
+
+Managed server configuration.
+
+MODE
+----
+Type: String (MANUAL/AUTO)
+Default: MANUAL
+Example: MODE=MANUAL
+
+  MANUAL: Define each server explicitly
+  AUTO: Generate servers from patterns
+
+
+MANUAL MODE SETTINGS
+--------------------
+
+SERVER_COUNT
+~~~~~~~~~~~~
+Type: Integer
+Example: SERVER_COUNT=8
+
+Number of managed servers (manual mode).
+
+
+SERVER<N>
+~~~~~~~~~
+Type: Colon-separated values
+Format: name:port:machine[:cluster]
+Example: SERVER1=xp6serverp1:8002:machine-xpmvp01:P6Cluster
+
+  name: Server name (unique)
+  port: Listen port
+  machine: Machine name (from [MACHINES])
+  cluster: Optional cluster assignment
+
+
+AUTO MODE SETTINGS
+------------------
+
+AUTO_SERVER_COUNT
+~~~~~~~~~~~~~~~~~
+Type: Integer
+Example: AUTO_SERVER_COUNT=8
+
+Number of servers to auto-generate.
+
+
+AUTO_SERVER_PREFIX
+~~~~~~~~~~~~~~~~~~
+Type: String
+Example: AUTO_SERVER_PREFIX=managedserver
+
+Prefix for generated server names.
+
+
+AUTO_SERVER_SUFFIX_STYLE
+~~~~~~~~~~~~~~~~~~~~~~~~
+Type: String (NUMBER/LETTER/PADDED)
+Default: NUMBER
+Example: AUTO_SERVER_SUFFIX_STYLE=PADDED
+
+  NUMBER: 1, 2, 3, ...
+  LETTER: a, b, c, ... (max 26)
+  PADDED: 01, 02, 03, ...
+
+
+AUTO_SERVER_START_PORT
+~~~~~~~~~~~~~~~~~~~~~~
+Type: Integer
+Default: 8001
+Example: AUTO_SERVER_START_PORT=8001
+
+First server's listen port.
+
+
+AUTO_PORT_INCREMENT
+~~~~~~~~~~~~~~~~~~~
+Type: Integer
+Default: 1
+Example: AUTO_PORT_INCREMENT=1
+
+Port increment between servers.
+
+
+AUTO_DISTRIBUTE_ACROSS_MACHINES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Type: Boolean (true/false)
+Default: true
+Example: AUTO_DISTRIBUTE_ACROSS_MACHINES=true
+
+Distribute servers round-robin across machines.
+
+
+AUTO_CLUSTER_ASSIGNMENT
+~~~~~~~~~~~~~~~~~~~~~~~
+Type: String (NONE/SINGLE/ROUND_ROBIN)
+Default: NONE
+Example: AUTO_CLUSTER_ASSIGNMENT=SINGLE
+
+  NONE: No cluster assignment
+  SINGLE: All to one cluster (AUTO_CLUSTER_NAME)
+  ROUND_ROBIN: Distribute across all clusters
+
+
+AUTO_CLUSTER_NAME
+~~~~~~~~~~~~~~~~~
+Type: String
+Example: AUTO_CLUSTER_NAME=ProductionCluster
+
+Cluster name for SINGLE assignment mode.
+
+
+SECTION: [NODEMANAGER]
+======================
+
+Node Manager configuration.
+
+TYPE
+----
+Type: String (PLAIN/SSL)
+Default: PLAIN
+Example: TYPE=PLAIN
+
+  PLAIN: Unencrypted (recommended for internal networks)
+  SSL: Encrypted (requires certificate setup)
+
+
+LISTEN_ADDRESS
+--------------
+Type: String
+Default: 0.0.0.0
+Example: LISTEN_ADDRESS=0.0.0.0
+
+Node Manager listen address.
+
+
+LISTEN_PORT
+-----------
+Type: Integer
+Default: 5556 (CRITICAL: Oracle standard)
+Example: LISTEN_PORT=5556
+
+Node Manager port. 5556 is the standard.
+
+
+SECURE_LISTENER
+---------------
+Type: Boolean (true/false)
+Default: false
+Example: SECURE_LISTENER=false
+
+Enable SSL for Node Manager (matches TYPE=SSL).
+
+
+SECTION: [OPTIONS]
+==================
+
+Post-creation options.
+
+CREATE_BOOT_PROPERTIES
+----------------------
+Type: Boolean (true/false)
+Default: true
+Example: CREATE_BOOT_PROPERTIES=true
+
+Create boot.properties files for password-less startup.
+
+
+GENERATE_AUTOSTART_CONFIG
+-------------------------
+Type: Boolean (true/false)
+Default: true
+Example: GENERATE_AUTOSTART_CONFIG=true
+
+Generate Phase 1 auto-start configuration.
+
+
+START_ADMIN_SERVER
+------------------
+Type: Boolean (true/false)
+Default: false
+Example: START_ADMIN_SERVER=false
+
+Start Admin Server after creation.
+
+
+START_MANAGED_SERVERS
+---------------------
+Type: Boolean (true/false)
+Default: false
+Example: START_MANAGED_SERVERS=false
+
+Start managed servers after creation.
+
+
+CONFIGURATION PATTERNS
+======================
+
+SINGLE-HOST DEVELOPMENT
+-----------------------
+[HOSTS]
+HOST_COUNT=1
+HOST1=localhost
+
+[CLUSTERS]
+ENABLED=false
+
+[MANAGED_SERVERS]
+MODE=AUTO
+AUTO_SERVER_COUNT=2
+
+
+TWO-HOST HA
+-----------
+[HOSTS]
+HOST_COUNT=2
+HOST1=weblogic01
+HOST2=weblogic02
+
+[CLUSTERS]
+ENABLED=true
+CLUSTER_COUNT=1
+CLUSTER1_NAME=HACluster
+
+
+P6 EPPM MULTI-CLUSTER
+---------------------
+[CLUSTERS]
+ENABLED=true
+CLUSTER_COUNT=4
+CLUSTER1_NAME=P6Cluster
+CLUSTER2_NAME=WebServicesCluster
+CLUSTER3_NAME=ProCloudConnectCluster
+CLUSTER4_NAME=TeamMemberCluster
+
+
+ENVIRONMENT VARIABLES
+=====================
+
+WLS_ADMIN_PASSWORD
+------------------
+Override admin password (highest priority).
+Recommended for production deployments.
+
+Example:
+  export WLS_ADMIN_PASSWORD='SecurePassword'
+  ./create-domain.sh --config domain.conf
+
+
+===============================================================================
+ END OF CONFIGURATION GUIDE
+===============================================================================

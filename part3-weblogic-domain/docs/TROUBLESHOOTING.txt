@@ -1,0 +1,465 @@
+===============================================================================
+ WebLogic Domain Creation Automation - Phase 2
+ TROUBLESHOOTING GUIDE
+===============================================================================
+
+This guide covers common issues and their solutions.
+
+
+COMMON ERRORS
+=============
+
+ERROR: WLST script not found
+----------------------------
+Symptom:
+  WLST script not found
+
+Cause:
+  - MIDDLEWARE_HOME or WEBLOGIC_HOME path incorrect
+  - WebLogic not installed
+
+Solution:
+  1. Verify WebLogic installation:
+     ls -la /app/fmw/wlserver/common/bin/wlst.sh
+     ls -la /app/fmw/oracle_common/common/bin/wlst.sh
+  
+  2. Update paths in configuration file
+
+
+ERROR: Template not found
+-------------------------
+Symptom:
+  Template not found: .../wls.jar
+
+Cause:
+  - WebLogic installation incomplete
+  - Wrong WEBLOGIC_HOME path
+
+Solution:
+  1. Verify template exists:
+     ls -la /app/fmw/wlserver/common/templates/wls/wls.jar
+  
+  2. Repair WebLogic installation if needed
+
+
+ERROR: Domain already exists
+----------------------------
+Symptom:
+  Domain already exists: /path/to/domain
+
+Cause:
+  - Previous domain creation in same location
+
+Solution:
+  Option 1: Remove existing domain
+    ./generated/cleanup-domain.sh --force
+  
+  Option 2: Use different domain name/path
+    ./create-domain.sh --config domain.conf --domain-name new_domain
+
+
+ERROR: Permission denied
+------------------------
+Symptom:
+  Permission denied creating domain directory
+
+Cause:
+  - User lacks write permission
+  - Directory owned by different user
+
+Solution:
+  1. Check ownership:
+     ls -la /app/fmw/user_projects/domains/
+  
+  2. Run as correct user or fix permissions:
+     sudo chown -R $USER:$USER /app/fmw/user_projects/
+
+
+ERROR: Invalid port
+-------------------
+Symptom:
+  Invalid admin port: xyz
+  Port must be 1024-65535
+
+Cause:
+  - Port number out of valid range
+  - Non-numeric value
+
+Solution:
+  - Use ports between 1024-65535
+  - Ensure numeric values only
+
+
+ERROR: Port already in use
+--------------------------
+Symptom:
+  Admin port 7001 appears to be in use
+
+Cause:
+  - Another process using the port
+  - Previous WebLogic instance running
+
+Solution:
+  1. Find process using port:
+     ss -tuln | grep 7001
+     lsof -i :7001
+  
+  2. Stop conflicting process or use different port
+
+
+ERROR: Java version mismatch
+----------------------------
+Symptom:
+  Java version may be too old
+
+Cause:
+  - Java version not certified for WebLogic
+  - JAVA_HOME pointing to wrong JDK
+
+Solution:
+  1. Check WebLogic certification matrix
+  2. Update JAVA_HOME to certified JDK
+  3. For WebLogic 14.1.1: JDK 8 or 11
+
+
+ERROR: Host unreachable
+-----------------------
+Symptom:
+  Host not reachable: weblogic02
+
+Cause:
+  - Network connectivity issue
+  - Hostname resolution failure
+  - Firewall blocking
+
+Solution:
+  1. Test connectivity:
+     ping weblogic02
+     
+  2. Check DNS/hosts file:
+     cat /etc/hosts
+     nslookup weblogic02
+     
+  3. Check firewall:
+     sudo firewall-cmd --list-all
+     sudo iptables -L -n
+
+
+WLST DEBUGGING
+==============
+
+Enable WLST Debug Mode
+----------------------
+Add to generated WLST script or run interactively:
+
+  java -Dweblogic.debug.DebugConnection=true \
+       -Dweblogic.StdoutDebugEnabled=true \
+       weblogic.WLST
+
+Common WLST Errors
+------------------
+
+"WLSTException: Error reading template"
+  - Template JAR file corrupt or missing
+  - Solution: Reinstall WebLogic or copy template from known good installation
+
+"Error: cd() could not change to path /Server/XYZ"
+  - Server doesn't exist in current domain config
+  - Solution: Create server before navigating to it
+
+"Error creating domain: IOException"
+  - Disk full or permission issue
+  - Solution: Check disk space and permissions
+
+
+WLST Debugging Tips
+-------------------
+
+1. Run WLST interactively to test commands:
+   /app/fmw/oracle_common/common/bin/wlst.sh
+   >>> readTemplate('/app/fmw/wlserver/common/templates/wls/wls.jar')
+   >>> cd('/')
+   >>> ls()
+
+2. Add print statements for debugging:
+   print("DEBUG: Creating server " + server_name)
+
+3. Check WLST log files:
+   $HOME/.wlst/wlst_*.log
+
+
+DOMAIN CREATION FAILURES
+========================
+
+Domain Creation Hangs
+---------------------
+Symptom:
+  Script appears to hang during domain creation
+
+Cause:
+  - Disk I/O slow
+  - Large template processing
+  - Memory issues
+
+Solution:
+  1. Check system resources:
+     top
+     df -h
+     free -m
+     
+  2. Increase Java heap if needed:
+     export JAVA_OPTIONS="-Xms512m -Xmx1024m"
+
+
+Partial Domain Created
+----------------------
+Symptom:
+  Domain directory exists but incomplete
+
+Cause:
+  - Script interrupted
+  - Error during creation
+
+Solution:
+  1. Check log file for errors:
+     tail -100 logs/domain-creation-*.log
+     
+  2. Cleanup and retry:
+     ./generated/cleanup-domain.sh --force
+     ./create-domain.sh --config domain.conf
+
+
+config.xml Not Created
+----------------------
+Symptom:
+  Domain directory exists but no config/config.xml
+
+Cause:
+  - WLST writeDomain() failed
+  - Disk space issue
+
+Solution:
+  1. Check WLST output in log
+  2. Verify disk space
+  3. Cleanup and retry
+
+
+NODE MANAGER ISSUES
+===================
+
+Node Manager Won't Start
+------------------------
+Symptom:
+  Node Manager fails to start
+
+Cause:
+  - Port in use
+  - Permission issues
+  - Missing properties file
+
+Solution:
+  1. Check port availability:
+     ss -tuln | grep 5556
+     
+  2. Verify nodemanager.properties:
+     cat $DOMAIN_HOME/nodemanager/nodemanager.properties
+     
+  3. Check permissions on nodemanager directory
+
+
+Node Manager SSL Issues
+-----------------------
+Symptom:
+  Node Manager fails with SSL errors
+
+Cause:
+  - TYPE=SSL but no certificates configured
+  - Certificate expired or invalid
+
+Solution:
+  - Use TYPE=PLAIN unless SSL is required
+  - If SSL needed, configure keystores properly
+
+
+Server Won't Start via Node Manager
+-----------------------------------
+Symptom:
+  Server fails to start when requested via Node Manager
+
+Cause:
+  - boot.properties missing or invalid
+  - Server not assigned to machine
+  - Node Manager not running
+
+Solution:
+  1. Verify boot.properties:
+     cat $DOMAIN_HOME/servers/$SERVER/security/boot.properties
+     
+  2. Check machine assignment in config.xml
+     
+  3. Verify Node Manager is running:
+     ps aux | grep NodeManager
+
+
+MULTI-HOST ISSUES
+=================
+
+Domain Not Accessible from Second Host
+--------------------------------------
+Symptom:
+  Cannot access domain from remote host
+
+Cause:
+  - Domain files not copied
+  - Network/firewall issues
+
+Solution:
+  1. Copy domain to all hosts:
+     rsync -avz $DOMAIN_HOME/ host2:$DOMAIN_HOME/
+     
+  2. Verify firewall allows WebLogic ports
+
+
+Admin Server Not Reachable
+--------------------------
+Symptom:
+  Managed servers can't connect to Admin Server
+
+Cause:
+  - Admin Server not running
+  - Firewall blocking port
+  - Listen address configuration
+
+Solution:
+  1. Verify Admin Server running:
+     curl -v http://adminhost:7001/console
+     
+  2. Check firewall on Admin host:
+     sudo firewall-cmd --zone=public --add-port=7001/tcp
+     
+  3. Verify LISTEN_ADDRESS allows remote connections
+
+
+VALIDATION FAILURES
+===================
+
+validate-environment.sh Failures
+--------------------------------
+
+"JAVA_HOME not found"
+  - Path incorrect or Java not installed
+  - Solution: Install JDK, update JAVA_HOME
+
+"WebLogic Home not found"
+  - Path incorrect or WebLogic not installed
+  - Solution: Install WebLogic, update WEBLOGIC_HOME
+
+"No write permission"
+  - User cannot write to domain parent
+  - Solution: Fix permissions or run as different user
+
+
+validate-domain.sh Failures
+---------------------------
+
+"Domain home does not exist"
+  - Domain creation failed
+  - Solution: Check creation logs, cleanup, retry
+
+"config.xml not found"
+  - Domain incomplete
+  - Solution: Cleanup and recreate domain
+
+"Server not defined"
+  - WLST script error
+  - Solution: Check configuration, recreate
+
+
+LOG FILES
+=========
+
+Main Creation Log
+-----------------
+Location: logs/domain-creation-YYYYMMDD-HHMMSS.log
+
+Contains:
+  - All script output
+  - Configuration values (except passwords)
+  - WLST execution output
+  - Error messages
+
+
+WLST Logs
+---------
+Location: $HOME/.wlst/wlst_*.log
+
+Contains:
+  - WLST execution details
+  - Python errors
+
+
+WebLogic Server Logs
+--------------------
+Location: $DOMAIN_HOME/servers/$SERVER/logs/
+
+Contains:
+  - Server startup logs
+  - Application logs
+  - Error messages
+
+
+ROLLBACK PROCEDURES
+===================
+
+Quick Cleanup
+-------------
+./generated/cleanup-domain.sh --force
+
+Preserving Logs
+---------------
+./generated/cleanup-domain.sh --preserve-logs
+
+Manual Cleanup
+--------------
+1. Stop any running servers
+2. Remove domain directory:
+   rm -rf $DOMAIN_HOME
+3. Remove generated scripts:
+   rm -rf generated/*
+
+
+GETTING HELP
+============
+
+1. Check this troubleshooting guide
+2. Review log files
+3. Run validation scripts
+4. Check Oracle documentation
+5. Search Oracle Support (MOS)
+
+
+USEFUL COMMANDS
+===============
+
+Check WebLogic processes:
+  ps aux | grep weblogic
+
+Check port usage:
+  ss -tuln | grep -E '7001|5556|800[0-9]'
+
+Test Admin Console:
+  curl -I http://localhost:7001/console
+
+View recent log entries:
+  tail -100 logs/domain-creation-*.log
+
+Check disk space:
+  df -h
+
+Check memory:
+  free -m
+
+
+===============================================================================
+ END OF TROUBLESHOOTING GUIDE
+===============================================================================
