@@ -30,31 +30,31 @@ EPPM_HOME = '/u01/app/eppm'
 # Format: (server_name, arguments)
 SERVER_ARGUMENTS = [
     # P6 Web Servers
-    ('p6web_server1', 
+    ('p6web_ms1', 
      '-server -Dprimavera.bootstrap.home=' + EPPM_HOME + '/p6 -Djava.awt.headless=true -Djavax.xml.stream.XMLInputFactory=com.ctc.wstx.stax.WstxInputFactory -Xms4096m -Xmx4096m -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:GCTimeRatio=19 -XX:NewSize=256m -XX:MaxNewSize=256m -XX:SurvivorRatio=8'),
     
-    ('p6web_server2', 
+    ('p6web_ms2', 
      '-server -Dprimavera.bootstrap.home=' + EPPM_HOME + '/p6 -Djava.awt.headless=true -Djavax.xml.stream.XMLInputFactory=com.ctc.wstx.stax.WstxInputFactory -Xms4096m -Xmx4096m -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:GCTimeRatio=19 -XX:NewSize=256m -XX:MaxNewSize=256m -XX:SurvivorRatio=8'),
     
     # Team Member Servers
-    ('p6tm_server1', 
+    ('p6tm_ms1', 
      '-Dprimavera.bootstrap.home=' + EPPM_HOME + '/tmws'),
     
-    ('p6tm_server2', 
+    ('p6tm_ms2', 
      '-Dprimavera.bootstrap.home=' + EPPM_HOME + '/tmws'),
     
     # Web Services Servers
-    ('p6ws_server1', 
+    ('p6ws_ms1', 
      '-Djavax.xml.soap.MessageFactory=com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl -Djavax.xml.soap.SOAPConnectionFactory=weblogic.wsee.saaj.SOAPConnectionFactoryImpl -Dprimavera.bootstrap.home=' + EPPM_HOME + '/ws'),
     
-    ('p6ws_server2', 
+    ('p6ws_ms2', 
      '-Djavax.xml.soap.MessageFactory=com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl -Djavax.xml.soap.SOAPConnectionFactory=weblogic.wsee.saaj.SOAPConnectionFactoryImpl -Dprimavera.bootstrap.home=' + EPPM_HOME + '/ws'),
     
     # Cloud Connect Servers
-    ('p6cc_server1', 
+    ('p6cc_ms1', 
      '-Dprimavera.bootstrap.home=' + EPPM_HOME + '/p6procloudconnect'),
     
-    ('p6cc_server2', 
+    ('p6cc_ms2', 
      '-Dprimavera.bootstrap.home=' + EPPM_HOME + '/p6procloudconnect'),
 ]
 
