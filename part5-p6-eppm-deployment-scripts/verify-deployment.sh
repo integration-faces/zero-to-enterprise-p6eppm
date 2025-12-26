@@ -11,15 +11,11 @@
 PRMAPP01="prmapp01"
 PRMAPP02="prmapp02"
 
-# Port Configuration
-P6_PORT_APP01=7010
-P6_PORT_APP02=7011
-P6TM_PORT_APP01=7030
-P6TM_PORT_APP02=7031
-P6WS_PORT_APP01=7020
-P6WS_PORT_APP02=7021
-P6CC_PORT_APP01=7040
-P6CC_PORT_APP02=7041
+# Port Configuration (same ports on both hosts)
+P6_PORT=7010
+P6TM_PORT=7030
+P6WS_PORT=7020
+P6CC_PORT=7040
 
 # Colors
 RED='\033[0;31m'
@@ -51,7 +47,7 @@ check_endpoint() {
     # Get HTTP status code with timeout
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "${URL}" 2>/dev/null)
     
-    if [ "$HTTP_CODE" = "$EXPECTED" ] || [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "301" ]; then
+    if [ "$HTTP_CODE" = "$EXPECTED" ] || [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "307" ]; then
         echo -e "${GREEN}PASS${NC} (HTTP ${HTTP_CODE})"
         ((PASS++))
         return 0
@@ -78,8 +74,8 @@ check_admin_console() {
 check_p6_web() {
     echo "P6 Web Application:"
     echo "------------------------------------------------------------"
-    check_endpoint "P6 Web - ${PRMAPP01}:${P6_PORT_APP01}" "http://${PRMAPP01}:${P6_PORT_APP01}/p6"
-    check_endpoint "P6 Web - ${PRMAPP02}:${P6_PORT_APP02}" "http://${PRMAPP02}:${P6_PORT_APP02}/p6"
+    check_endpoint "P6 Web - ${PRMAPP01}:${P6_PORT}" "http://${PRMAPP01}:${P6_PORT}/p6"
+    check_endpoint "P6 Web - ${PRMAPP02}:${P6_PORT}" "http://${PRMAPP02}:${P6_PORT}/p6"
     echo ""
 }
 
@@ -87,8 +83,8 @@ check_p6_web() {
 check_team_member() {
     echo "P6 Team Member Application:"
     echo "------------------------------------------------------------"
-    check_endpoint "Team Member - ${PRMAPP01}:${P6TM_PORT_APP01}" "http://${PRMAPP01}:${P6TM_PORT_APP01}/p6tm"
-    check_endpoint "Team Member - ${PRMAPP02}:${P6TM_PORT_APP02}" "http://${PRMAPP02}:${P6TM_PORT_APP02}/p6tm"
+    check_endpoint "Team Member - ${PRMAPP01}:${P6TM_PORT}" "http://${PRMAPP01}:${P6TM_PORT}/p6tm"
+    check_endpoint "Team Member - ${PRMAPP02}:${P6TM_PORT}" "http://${PRMAPP02}:${P6TM_PORT}/p6tm"
     echo ""
 }
 
@@ -96,8 +92,8 @@ check_team_member() {
 check_web_services() {
     echo "P6 Web Services Application:"
     echo "------------------------------------------------------------"
-    check_endpoint "Web Services - ${PRMAPP01}:${P6WS_PORT_APP01}" "http://${PRMAPP01}:${P6WS_PORT_APP01}/p6ws/services"
-    check_endpoint "Web Services - ${PRMAPP02}:${P6WS_PORT_APP02}" "http://${PRMAPP02}:${P6WS_PORT_APP02}/p6ws/services"
+    check_endpoint "Web Services - ${PRMAPP01}:${P6WS_PORT}" "http://${PRMAPP01}:${P6WS_PORT}/p6ws/services"
+    check_endpoint "Web Services - ${PRMAPP02}:${P6WS_PORT}" "http://${PRMAPP02}:${P6WS_PORT}/p6ws/services"
     echo ""
 }
 
@@ -105,8 +101,8 @@ check_web_services() {
 check_cloud_connect() {
     echo "P6 Professional Cloud Connect Application:"
     echo "------------------------------------------------------------"
-    check_endpoint "Cloud Connect - ${PRMAPP01}:${P6CC_PORT_APP01}" "http://${PRMAPP01}:${P6CC_PORT_APP01}/p6procloudconnect"
-    check_endpoint "Cloud Connect - ${PRMAPP02}:${P6CC_PORT_APP02}" "http://${PRMAPP02}:${P6CC_PORT_APP02}/p6procloudconnect"
+    check_endpoint "Cloud Connect - ${PRMAPP01}:${P6CC_PORT}" "http://${PRMAPP01}:${P6CC_PORT}/p6procloudconnect"
+    check_endpoint "Cloud Connect - ${PRMAPP02}:${P6CC_PORT}" "http://${PRMAPP02}:${P6CC_PORT}/p6procloudconnect"
     echo ""
 }
 
@@ -131,7 +127,7 @@ echo ""
 if [ ${FAIL} -eq 0 ]; then
     echo -e "${GREEN}All P6 EPPM applications are responding correctly!${NC}"
     echo ""
-    echo "Access P6 Web at: http://${PRMAPP01}:${P6_PORT_APP01}/p6"
+    echo "Access P6 Web at: http://${PRMAPP01}:${P6_PORT}/p6"
     EXIT_CODE=0
 else
     echo -e "${YELLOW}Some applications are not responding. Check WebLogic server status.${NC}"
