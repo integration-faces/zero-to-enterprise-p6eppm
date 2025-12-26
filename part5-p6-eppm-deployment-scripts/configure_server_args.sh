@@ -8,8 +8,8 @@
 # =============================================================================
 
 # Configuration
-ORACLE_HOME="/u01/app/wls/oracle_home"
-DOMAIN_HOME="/u01/app/wls/domains/eppm_domain"
+ORACLE_HOME="/u01/app/weblogic"
+DOMAIN_HOME="/u01/app/weblogic/user_projects/domains/eppm_domain"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WLST_SCRIPT="${SCRIPT_DIR}/configure_server_args.py"
 

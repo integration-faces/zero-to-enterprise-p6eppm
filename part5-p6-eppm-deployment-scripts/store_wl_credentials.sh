@@ -8,7 +8,7 @@
 # =============================================================================
 
 # Configuration
-ORACLE_HOME="/u01/app/wls/oracle_home"
+ORACLE_HOME="/u01/app/weblogic"
 SCRIPT_DIR="/u01/app/eppm/scripts"
 CONFIG_FILE="${SCRIPT_DIR}/wlconfig"
 KEY_FILE="${SCRIPT_DIR}/wlkey"
