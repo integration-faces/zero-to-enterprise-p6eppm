@@ -1,0 +1,84 @@
+# =============================================================================
+# P6 EPPM 25.12 - WebLogic Server Java Arguments Reference
+# =============================================================================
+# 
+# Configure these arguments in WebLogic Console:
+#   Servers → [server_name] → Configuration → Server Start → Arguments
+#
+# IMPORTANT: Configure these BEFORE deploying P6 applications
+#
+# Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 5
+# Integration Faces - https://integrationfaces.com
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# P6 Web Servers (p6web_server1, p6web_server2)
+# -----------------------------------------------------------------------------
+
+-server -Dprimavera.bootstrap.home=/u01/app/eppm/p6 -Djava.awt.headless=true -Djavax.xml.stream.XMLInputFactory=com.ctc.wstx.stax.WstxInputFactory -Xms4096m -Xmx4096m -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:GCTimeRatio=19 -XX:NewSize=256m -XX:MaxNewSize=256m -XX:SurvivorRatio=8
+
+
+# -----------------------------------------------------------------------------
+# Team Member Servers (p6tm_server1, p6tm_server2)
+# -----------------------------------------------------------------------------
+
+-Dprimavera.bootstrap.home=/u01/app/eppm/tmws
+
+
+# -----------------------------------------------------------------------------
+# Web Services Servers (p6ws_server1, p6ws_server2)
+# -----------------------------------------------------------------------------
+
+-Djavax.xml.soap.MessageFactory=com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl -Djavax.xml.soap.SOAPConnectionFactory=weblogic.wsee.saaj.SOAPConnectionFactoryImpl -Dprimavera.bootstrap.home=/u01/app/eppm/ws
+
+
+# -----------------------------------------------------------------------------
+# Cloud Connect Servers (p6cc_server1, p6cc_server2)
+# -----------------------------------------------------------------------------
+
+-Dprimavera.bootstrap.home=/u01/app/eppm/p6procloudconnect
+
+
+# =============================================================================
+# Argument Reference
+# =============================================================================
+#
+# -server
+#     Enables server JVM optimizations for long-running processes
+#
+# -Dprimavera.bootstrap.home=<path>
+#     Points to directory containing BREBootstrap.xml for the component
+#     Each P6 component has its own bootstrap configuration
+#
+# -Djava.awt.headless=true
+#     Prevents AWT from requiring a display (essential for headless servers)
+#     Required for P6 Web to generate charts/graphics without X11
+#
+# -Djavax.xml.stream.XMLInputFactory=com.ctc.wstx.stax.WstxInputFactory
+#     Specifies Woodstox XML parser for P6 Web (performance/compatibility)
+#
+# -Djavax.xml.soap.MessageFactory=...
+#     SOAP factory configuration required for P6 Web Services
+#
+# -Djavax.xml.soap.SOAPConnectionFactory=...
+#     WebLogic SOAP connection factory for Web Services integration
+#
+# -Xms4096m -Xmx4096m
+#     Sets JVM heap memory: 4GB minimum and maximum
+#     Adjust based on expected user load and available RAM
+#
+# -XX:+UseParallelGC -XX:+UseParallelOldGC
+#     Garbage collection strategy optimized for throughput
+#     Good for batch processing and high-throughput scenarios
+#
+# -XX:GCTimeRatio=19
+#     Sets GC time ratio (1/(1+19) = 5% time spent in GC)
+#
+# -XX:NewSize=256m -XX:MaxNewSize=256m
+#     Young generation sizing for GC performance
+#
+# -XX:SurvivorRatio=8
+#     Ratio of Eden to Survivor space in young generation
+#
+# =============================================================================
