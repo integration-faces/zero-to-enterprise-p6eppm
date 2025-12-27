@@ -11,7 +11,7 @@
 import sys
 import os
 import socket
-import time
+from java.lang import Thread
 
 # Connection parameters
 admin_url = 't3://prmapp01:7001'
@@ -20,7 +20,7 @@ admin_password = os.environ.get('WLS_ADMIN_PASSWORD', 'CHANGE_ME')
 
 # Retry settings for waiting on Admin Server
 max_retries = 30
-retry_interval = 10  # seconds
+retry_interval = 10000  # milliseconds (10 seconds)
 
 # Get hostname and determine which servers to manage
 hostname = socket.gethostname().split('.')[0]  # Remove domain suffix if present
@@ -53,13 +53,12 @@ for attempt in range(1, max_retries + 1):
         print('Connected successfully')
         connected = True
         break
-    except Exception, e:
+    except:
         if attempt < max_retries:
-            print('  Admin Server not ready, waiting ' + str(retry_interval) + ' seconds...')
-            time.sleep(retry_interval)
+            print('  Admin Server not ready, waiting 10 seconds...')
+            Thread.sleep(retry_interval)
         else:
             print('ERROR: Could not connect after ' + str(max_retries) + ' attempts')
-            print('Exception: ' + str(e))
             sys.exit(1)
 
 if not connected:
