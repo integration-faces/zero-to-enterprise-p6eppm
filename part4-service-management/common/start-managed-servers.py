@@ -11,11 +11,16 @@
 import sys
 import os
 import socket
+import time
 
 # Connection parameters
 admin_url = 't3://prmapp01:7001'
 admin_user = 'weblogic'
 admin_password = os.environ.get('WLS_ADMIN_PASSWORD', 'CHANGE_ME')
+
+# Retry settings for waiting on Admin Server
+max_retries = 30
+retry_interval = 10  # seconds
 
 # Get hostname and determine which servers to manage
 hostname = socket.gethostname().split('.')[0]  # Remove domain suffix if present
@@ -33,18 +38,37 @@ if hostname not in server_map:
 
 managed_servers = server_map[hostname]
 
+print('=' * 60)
+print('P6 EPPM Managed Server Startup')
+print('Host: ' + hostname)
+print('=' * 60)
+print('')
+
+# Try to connect with retries (wait for Admin Server to be ready)
+connected = False
+for attempt in range(1, max_retries + 1):
+    try:
+        print('Connecting to Admin Server at ' + admin_url + ' (attempt ' + str(attempt) + '/' + str(max_retries) + ')')
+        connect(admin_user, admin_password, admin_url)
+        print('Connected successfully')
+        connected = True
+        break
+    except Exception, e:
+        if attempt < max_retries:
+            print('  Admin Server not ready, waiting ' + str(retry_interval) + ' seconds...')
+            time.sleep(retry_interval)
+        else:
+            print('ERROR: Could not connect after ' + str(max_retries) + ' attempts')
+            print('Exception: ' + str(e))
+            sys.exit(1)
+
+if not connected:
+    print('ERROR: Failed to connect to Admin Server')
+    sys.exit(1)
+
+print('')
+
 try:
-    print('=' * 60)
-    print('P6 EPPM Managed Server Startup')
-    print('Host: ' + hostname)
-    print('=' * 60)
-    print('')
-    
-    print('Connecting to Admin Server at ' + admin_url)
-    connect(admin_user, admin_password, admin_url)
-    print('Connected successfully')
-    print('')
-    
     # Navigate to domainRuntime to access ServerLifeCycleRuntimes
     domainRuntime()
     
