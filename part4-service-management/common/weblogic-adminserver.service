@@ -1,0 +1,39 @@
+[Unit]
+Description=WebLogic Admin Server for eppm_domain
+After=network.target weblogic-nodemanager.service
+Requires=weblogic-nodemanager.service
+
+[Service]
+Type=simple
+User=oracle
+Group=oinstall
+WorkingDirectory=/u01/app/weblogic/user_projects/domains/eppm_domain
+
+# Set Oracle/WebLogic environment
+Environment="JAVA_HOME=/u01/app/java/jdk11"
+Environment="MW_HOME=/u01/app/weblogic"
+Environment="WL_HOME=/u01/app/weblogic/wlserver"
+Environment="DOMAIN_HOME=/u01/app/weblogic/user_projects/domains/eppm_domain"
+Environment="USER_MEM_ARGS=-Xms512m -Xmx1024m"
+
+# Start Admin Server
+ExecStart=/bin/bash /u01/app/weblogic/user_projects/domains/eppm_domain/bin/startWebLogic.sh
+
+# Stop Admin Server
+ExecStop=/bin/bash /u01/app/weblogic/user_projects/domains/eppm_domain/bin/stopWebLogic.sh
+
+# Restart policy
+Restart=on-failure
+RestartSec=60
+
+# Timeouts
+TimeoutStartSec=600
+TimeoutStopSec=300
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=weblogic-adminserver
+
+[Install]
+WantedBy=multi-user.target

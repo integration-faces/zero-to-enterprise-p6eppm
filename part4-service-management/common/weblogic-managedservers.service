@@ -1,0 +1,38 @@
+[Unit]
+Description=WebLogic Managed Servers for eppm_domain
+After=network.target weblogic-nodemanager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=oracle
+Group=oinstall
+WorkingDirectory=/u01/app/weblogic/user_projects/domains/eppm_domain
+
+# Set Oracle/WebLogic environment
+Environment="JAVA_HOME=/u01/app/java/jdk11"
+Environment="MW_HOME=/u01/app/weblogic"
+Environment="WL_HOME=/u01/app/weblogic/wlserver"
+Environment="DOMAIN_HOME=/u01/app/weblogic/user_projects/domains/eppm_domain"
+Environment="WLST_PROPERTIES=-Dweblogic.security.TrustKeyStore=DemoTrust"
+
+# Admin credentials (read from secure file)
+EnvironmentFile=/u01/app/eppm/scripts/wls_env
+
+# Start managed servers using WLST (auto-detects hostname)
+ExecStart=/u01/app/weblogic/oracle_common/common/bin/wlst.sh /u01/app/eppm/scripts/start-managed-servers.py
+
+# Stop managed servers using WLST (auto-detects hostname)
+ExecStop=/u01/app/weblogic/oracle_common/common/bin/wlst.sh /u01/app/eppm/scripts/stop-managed-servers.py
+
+# Timeouts
+TimeoutStartSec=900
+TimeoutStopSec=600
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=weblogic-managedservers
+
+[Install]
+WantedBy=multi-user.target

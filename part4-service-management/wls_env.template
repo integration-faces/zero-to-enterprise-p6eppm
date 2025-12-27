@@ -1,0 +1,8 @@
+# WebLogic Admin Credentials for systemd services
+# Location: /u01/app/eppm/scripts/wls_env
+# Permissions: chmod 600 /u01/app/eppm/scripts/wls_env; chown oracle:oinstall /u01/app/eppm/scripts/wls_env
+#
+# This file is read by systemd EnvironmentFile directive
+# SECURITY: Keep this file secure with restricted permissions
+
+WLS_ADMIN_PASSWORD=Woof4Dog#
