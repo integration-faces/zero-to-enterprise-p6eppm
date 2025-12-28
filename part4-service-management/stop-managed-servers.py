@@ -4,8 +4,12 @@
 # Stop P6 EPPM Managed Servers via WLST
 # Auto-detects hostname and stops appropriate servers
 #
+# Uses Oracle's encrypted credential store for secure authentication.
+# Credentials must be set up first using store-credentials.py
+#
 # Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 4
 # Integration Faces - https://integrationfaces.com
+# Benjamin Mukoro & AI Assistant
 # =============================================================================
 
 import sys
@@ -14,8 +18,11 @@ import socket
 
 # Connection parameters
 admin_url = 't3://prmapp01:7001'
-admin_user = 'weblogic'
-admin_password = os.environ.get('WLS_ADMIN_PASSWORD', 'CHANGE_ME')
+
+# Credential store files (created by store-credentials.py)
+credential_dir = '/u01/app/eppm/scripts'
+config_file = credential_dir + '/wlconfig'
+key_file = credential_dir + '/wlkey'
 
 # Get hostname and determine which servers to manage
 hostname = socket.gethostname().split('.')[0]  # Remove domain suffix if present
@@ -33,18 +40,37 @@ if hostname not in server_map:
 
 managed_servers = server_map[hostname]
 
-try:
-    print('=' * 60)
-    print('P6 EPPM Managed Server Shutdown')
-    print('Host: ' + hostname)
-    print('=' * 60)
+print('=' * 60)
+print('P6 EPPM Managed Server Shutdown')
+print('Host: ' + hostname)
+print('=' * 60)
+print('')
+
+# Verify credential files exist
+if not os.path.exists(config_file):
+    print('ERROR: Credential config file not found: ' + config_file)
     print('')
-    
-    print('Connecting to Admin Server at ' + admin_url)
-    connect(admin_user, admin_password, admin_url)
+    print('Please run store-credentials.py first to set up secure credentials.')
+    sys.exit(1)
+
+if not os.path.exists(key_file):
+    print('ERROR: Credential key file not found: ' + key_file)
+    print('')
+    print('Please run store-credentials.py first to set up secure credentials.')
+    sys.exit(1)
+
+try:
+    print('Connecting to Admin Server at ' + admin_url + '...')
+    # Use encrypted credential store instead of plaintext password
+    connect(userConfigFile=config_file, userKeyFile=key_file, url=admin_url)
     print('Connected successfully')
     print('')
-    
+except Exception, e:
+    print('ERROR: Could not connect to Admin Server')
+    print(str(e))
+    sys.exit(1)
+
+try:
     # Navigate to domainRuntime to access ServerLifeCycleRuntimes
     domainRuntime()
     
@@ -64,7 +90,7 @@ try:
                 continue
             
             print('Stopping: ' + server_name + ' (current state: ' + state + ')')
-            shutdown(server_name, 'Server', ignoreSessions='true', force='true')
+            shutdown(server_name, 'Server', force='true')
             print('  -> Stopped: ' + server_name)
             stopped_count += 1
         except Exception, e:

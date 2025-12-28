@@ -3,7 +3,7 @@
 # verify-installation.sh
 # Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 2
 # 
-# Verifies JDK and WebLogic installation.
+# Verifies JDK 11 and WebLogic 14.1.1 installation.
 # Run as oracle user.
 #
 # Integration Faces - https://integrationfaces.com
@@ -25,25 +25,27 @@ ERRORS=0
 
 # Check Java
 echo -e "${YELLOW}Checking Java...${NC}"
-if [ -d "/u01/app/java/jdk17" ]; then
+if [ -d "/u01/app/java/jdk11" ]; then
     echo -e "  ${GREEN}✓${NC} JDK directory exists"
-    JAVA_VER=$(/u01/app/java/jdk17/bin/java -version 2>&1 | head -1)
+    JAVA_VER=$(/u01/app/java/jdk11/bin/java -version 2>&1 | head -n 1)
     echo -e "  ${GREEN}✓${NC} Java version: ${JAVA_VER}"
 else
     echo -e "  ${RED}✗${NC} JDK directory not found"
     ((ERRORS++))
 fi
 
+# Check JAVA_HOME
+echo ""
+echo -e "${YELLOW}Checking JAVA_HOME...${NC}"
 if [ -n "$JAVA_HOME" ]; then
-    echo -e "  ${GREEN}✓${NC} JAVA_HOME is set: $JAVA_HOME"
+    echo -e "  ${GREEN}✓${NC} JAVA_HOME set: $JAVA_HOME"
 else
-    echo -e "  ${RED}✗${NC} JAVA_HOME is not set"
+    echo -e "  ${RED}✗${NC} JAVA_HOME not set"
     ((ERRORS++))
 fi
 
-echo ""
-
 # Check WebLogic
+echo ""
 echo -e "${YELLOW}Checking WebLogic...${NC}"
 if [ -d "/u01/app/weblogic/wlserver" ]; then
     echo -e "  ${GREEN}✓${NC} WebLogic directory exists"
@@ -52,40 +54,41 @@ else
     ((ERRORS++))
 fi
 
+# Check MW_HOME
+echo ""
+echo -e "${YELLOW}Checking MW_HOME...${NC}"
 if [ -n "$MW_HOME" ]; then
-    echo -e "  ${GREEN}✓${NC} MW_HOME is set: $MW_HOME"
+    echo -e "  ${GREEN}✓${NC} MW_HOME set: $MW_HOME"
 else
-    echo -e "  ${RED}✗${NC} MW_HOME is not set"
+    echo -e "  ${RED}✗${NC} MW_HOME not set"
     ((ERRORS++))
 fi
 
+# Check WL_HOME
+echo ""
+echo -e "${YELLOW}Checking WL_HOME...${NC}"
+if [ -n "$WL_HOME" ]; then
+    echo -e "  ${GREEN}✓${NC} WL_HOME set: $WL_HOME"
+else
+    echo -e "  ${RED}✗${NC} WL_HOME not set"
+    ((ERRORS++))
+fi
+
+# Check WebLogic version
+echo ""
+echo -e "${YELLOW}Checking WebLogic version...${NC}"
 if [ -f "/u01/app/weblogic/wlserver/server/bin/setWLSEnv.sh" ]; then
-    echo -e "  ${GREEN}✓${NC} setWLSEnv.sh exists"
-    
-    # Get WebLogic version
     cd /u01/app/weblogic/wlserver/server/bin
     . ./setWLSEnv.sh > /dev/null 2>&1
-    WLS_VER=$(java weblogic.version 2>&1 | head -1)
-    echo -e "  ${GREEN}✓${NC} WebLogic version: ${WLS_VER}"
+    WLS_VER=$(java weblogic.version 2>&1 | grep "WebLogic Server")
+    echo -e "  ${GREEN}✓${NC} ${WLS_VER}"
 else
-    echo -e "  ${RED}✗${NC} setWLSEnv.sh not found"
+    echo -e "  ${RED}✗${NC} Cannot verify WebLogic version"
     ((ERRORS++))
 fi
-
-echo ""
-
-# Check Oracle Inventory
-echo -e "${YELLOW}Checking Oracle Inventory...${NC}"
-if [ -d "/u01/app/oraInventory" ]; then
-    echo -e "  ${GREEN}✓${NC} Oracle Inventory directory exists"
-else
-    echo -e "  ${RED}✗${NC} Oracle Inventory directory not found"
-    ((ERRORS++))
-fi
-
-echo ""
 
 # Summary
+echo ""
 echo -e "${GREEN}============================================${NC}"
 if [ $ERRORS -eq 0 ]; then
     echo -e "${GREEN}  All checks passed!${NC}"

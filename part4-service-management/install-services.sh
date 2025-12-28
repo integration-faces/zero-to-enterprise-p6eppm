@@ -3,11 +3,16 @@
 # install-services.sh
 # Install WebLogic systemd services for P6 EPPM
 #
+# This script installs the systemd service files and WLST scripts.
+# After running this script, you must set up credentials using
+# store-credentials.py before the services will work.
+#
 # Usage:
 #   sudo ./install-services.sh
 #
 # Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 4
 # Integration Faces - https://integrationfaces.com
+# Benjamin Mukoro & AI Assistant
 # =============================================================================
 
 set -e
@@ -38,25 +43,17 @@ fi
 echo "[1/5] Creating scripts directory..."
 mkdir -p /u01/app/eppm/scripts
 chown oracle:oinstall /u01/app/eppm/scripts
+chmod 750 /u01/app/eppm/scripts
 
-echo "[2/5] Installing WLST scripts..."
+echo "[2/5] Installing scripts..."
+cp "${SCRIPT_DIR}/setup-boot-properties.sh" /u01/app/eppm/scripts/
+cp "${SCRIPT_DIR}/store-credentials.py" /u01/app/eppm/scripts/
 cp "${SCRIPT_DIR}/start-managed-servers.py" /u01/app/eppm/scripts/
 cp "${SCRIPT_DIR}/stop-managed-servers.py" /u01/app/eppm/scripts/
-chown oracle:oinstall /u01/app/eppm/scripts/*.py
-chmod 755 /u01/app/eppm/scripts/*.py
+chown oracle:oinstall /u01/app/eppm/scripts/*.py /u01/app/eppm/scripts/*.sh
+chmod 750 /u01/app/eppm/scripts/*.py /u01/app/eppm/scripts/*.sh
 
-echo "[3/5] Creating credentials file..."
-if [[ ! -f /u01/app/eppm/scripts/wls_env ]]; then
-    cp "${SCRIPT_DIR}/wls_env" /u01/app/eppm/scripts/
-    chown oracle:oinstall /u01/app/eppm/scripts/wls_env
-    chmod 600 /u01/app/eppm/scripts/wls_env
-    echo "  -> Created /u01/app/eppm/scripts/wls_env"
-    echo "  -> UPDATE PASSWORD in this file!"
-else
-    echo "  -> File exists, skipping"
-fi
-
-echo "[4/5] Installing systemd service files..."
+echo "[3/5] Installing systemd service files..."
 cp "${SCRIPT_DIR}/weblogic-nodemanager.service" /etc/systemd/system/
 cp "${SCRIPT_DIR}/weblogic-managedservers.service" /etc/systemd/system/
 
@@ -69,35 +66,48 @@ fi
 
 chmod 644 /etc/systemd/system/weblogic-*.service
 
-echo "[5/5] Reloading systemd..."
+echo "[4/5] Reloading systemd..."
 systemctl daemon-reload
+
+echo "[5/5] Verifying installation..."
+echo "  -> Scripts directory: /u01/app/eppm/scripts/"
+ls -la /u01/app/eppm/scripts/
 
 echo ""
 echo "============================================================"
 echo "Installation Complete!"
 echo "============================================================"
 echo ""
-echo "Next steps:"
+echo "NEXT STEPS (as the oracle user):"
 echo ""
-echo "1. Set the WebLogic password:"
-echo "   sudo vi /u01/app/eppm/scripts/wls_env"
-echo ""
-echo "2. Enable services to start on boot:"
 if [[ "${HOSTNAME}" == "prmapp01" ]]; then
-    echo "   sudo systemctl enable weblogic-nodemanager"
-    echo "   sudo systemctl enable weblogic-adminserver"
-    echo "   sudo systemctl enable weblogic-managedservers"
-else
-    echo "   sudo systemctl enable weblogic-nodemanager"
-    echo "   sudo systemctl enable weblogic-managedservers"
-fi
-echo ""
-echo "3. Start services:"
-if [[ "${HOSTNAME}" == "prmapp01" ]]; then
+    echo "1. Set up Admin Server boot.properties:"
+    echo "   cd /u01/app/eppm/scripts"
+    echo "   ./setup-boot-properties.sh"
+    echo ""
+    echo "2. Start Admin Server manually once to encrypt boot.properties:"
+    echo "   cd /u01/app/weblogic/user_projects/domains/eppm_domain/bin"
+    echo "   ./startWebLogic.sh"
+    echo "   (Wait for startup, then Ctrl+C to stop)"
+    echo ""
+    echo "3. Set up WLST credential store (Admin Server must be running):"
+    echo "   cd /u01/app/eppm/scripts"
+    echo "   /u01/app/weblogic/oracle_common/common/bin/wlst.sh store-credentials.py"
+    echo ""
+    echo "4. Enable and start services:"
+    echo "   sudo systemctl enable weblogic-nodemanager weblogic-adminserver weblogic-managedservers"
     echo "   sudo systemctl start weblogic-nodemanager"
     echo "   sudo systemctl start weblogic-adminserver"
     echo "   sudo systemctl start weblogic-managedservers"
 else
+    echo "1. Ensure prmapp01's Admin Server is running"
+    echo ""
+    echo "2. Set up WLST credential store:"
+    echo "   cd /u01/app/eppm/scripts"
+    echo "   /u01/app/weblogic/oracle_common/common/bin/wlst.sh store-credentials.py"
+    echo ""
+    echo "3. Enable and start services:"
+    echo "   sudo systemctl enable weblogic-nodemanager weblogic-managedservers"
     echo "   sudo systemctl start weblogic-nodemanager"
     echo "   sudo systemctl start weblogic-managedservers"
 fi

@@ -4,8 +4,12 @@
 # Start P6 EPPM Managed Servers via WLST
 # Auto-detects hostname and starts appropriate servers
 #
+# Uses Oracle's encrypted credential store for secure authentication.
+# Credentials must be set up first using store-credentials.py
+#
 # Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 4
 # Integration Faces - https://integrationfaces.com
+# Benjamin Mukoro & AI Assistant
 # =============================================================================
 
 import sys
@@ -15,8 +19,11 @@ from java.lang import Thread
 
 # Connection parameters
 admin_url = 't3://prmapp01:7001'
-admin_user = 'weblogic'
-admin_password = os.environ.get('WLS_ADMIN_PASSWORD', 'CHANGE_ME')
+
+# Credential store files (created by store-credentials.py)
+credential_dir = '/u01/app/eppm/scripts'
+config_file = credential_dir + '/wlconfig'
+key_file = credential_dir + '/wlkey'
 
 # Retry settings for waiting on Admin Server
 max_retries = 30
@@ -44,12 +51,26 @@ print('Host: ' + hostname)
 print('=' * 60)
 print('')
 
+# Verify credential files exist
+if not os.path.exists(config_file):
+    print('ERROR: Credential config file not found: ' + config_file)
+    print('')
+    print('Please run store-credentials.py first to set up secure credentials.')
+    sys.exit(1)
+
+if not os.path.exists(key_file):
+    print('ERROR: Credential key file not found: ' + key_file)
+    print('')
+    print('Please run store-credentials.py first to set up secure credentials.')
+    sys.exit(1)
+
 # Try to connect with retries (wait for Admin Server to be ready)
 connected = False
 for attempt in range(1, max_retries + 1):
     try:
         print('Connecting to Admin Server at ' + admin_url + ' (attempt ' + str(attempt) + '/' + str(max_retries) + ')')
-        connect(admin_user, admin_password, admin_url)
+        # Use encrypted credential store instead of plaintext password
+        connect(userConfigFile=config_file, userKeyFile=key_file, url=admin_url)
         print('Connected successfully')
         connected = True
         break

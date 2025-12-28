@@ -1,161 +1,144 @@
-# Part 5: P6 EPPM Deployment Scripts
+# Part 5: P6 EPPM Deployment
 
-Zero to Enterprise: P6 EPPM 25.12 with SSO  
-**Integration Faces** — [integrationfaces.com](https://integrationfaces.com)
+Guide and scripts for deploying Oracle Primavera P6 EPPM 25.12 applications to WebLogic Server 14.1.1.
 
----
-
-## Overview
-
-This directory contains scripts for deploying P6 EPPM 25.12 applications to a WebLogic clustered environment. These scripts accompany [Part 5 of the Zero to Enterprise blog series](#).
+This part covers deploying the four P6 EPPM application components to their respective WebLogic clusters: P6 Web, Web Services, Team Member, and Professional Cloud Connect.
 
 ## Prerequisites
 
-- Completed Parts 1-4 (WebLogic domain with clusters configured)
-- P6 EPPM 25.12 installed on both application hosts
-- Bootstrap configuration completed for all components
-- Java arguments configured for all managed servers
+Before deploying P6 EPPM, ensure you have completed Parts 1-4 of the series with a fully functional WebLogic domain. All nine servers (Admin Server plus eight managed servers) should be running and accessible. You'll also need the P6 EPPM 25.12 installation media from Oracle eDelivery.
 
-## Files
+The P6 database schemas must already be created. If you're starting fresh, use the P6 Database Configuration Tool to create the required schemas before proceeding with the application deployment.
 
-| File | Description |
-|------|-------------|
-| `deploy_p6_apps.py` | WLST script to deploy all P6 applications to WebLogic clusters |
-| `deploy_p6_apps.sh` | Shell wrapper to execute the WLST deployment script |
-| `store_wl_credentials.sh` | Securely store WebLogic admin credentials for scripted access |
-| `verify-deployment.sh` | Health check script to verify all P6 endpoints are responding |
+## P6 EPPM Components
 
-## Quick Start
+P6 EPPM 25.12 consists of four deployable applications, each targeting a specific cluster in our architecture.
 
-### 1. Store WebLogic Credentials (One-time setup)
+The P6 Web application (p6.ear) provides the main browser-based interface for project management. It deploys to the p6web_cluster and runs on p6web_ms1 and p6web_ms2.
+
+The Web Services application (p6ws) exposes SOAP and REST APIs for integration. It deploys to the p6ws_cluster on p6ws_ms1 and p6ws_ms2.
+
+The Team Member Web application (p6tm) provides a simplified interface for team members to update timesheets and activities. It deploys to the p6tm_cluster on p6tm_ms1 and p6tm_ms2.
+
+The Professional Cloud Connect application (p6procloudconnect) enables P6 Professional desktop clients to connect through the web tier. It deploys to the p6cc_cluster on p6cc_ms1 and p6cc_ms2.
+
+## Directory Structure
+
+After installation, the P6 EPPM files are organized under /u01/app/eppm:
+
+```
+/u01/app/eppm/
+├── p6/                       # P6 Web application files
+│   ├── p6.ear               # Main P6 Web EAR file
+│   ├── BREBootStrap.xml     # Bootstrap configuration
+│   └── ...
+├── tmws/                     # Team Member Web application
+│   └── p6tm.war
+├── ws/                       # Web Services application  
+│   └── p6ws.ear
+├── p6procloudconnect/        # Professional Cloud Connect
+│   └── p6procloudconnect.war
+└── scripts/                  # Automation scripts
+    ├── wlconfig              # Stored WebLogic credentials
+    └── wlkey
+```
+
+## Deployment Steps
+
+### Step 1: Install P6 EPPM Files
+
+Run the P6 EPPM installer to extract the application files. The installer creates the directory structure and copies the EAR/WAR files to their locations.
 
 ```bash
-chmod +x store_wl_credentials.sh
-./store_wl_credentials.sh
+cd /u01/stage
+# Run P6 installer (GUI or silent mode)
+java -jar p6setup.jar
 ```
 
-This creates encrypted credential files so you don't need to embed passwords in scripts.
+During installation, specify /u01/app/eppm as the installation directory and configure the bootstrap connection to your P6 database.
 
-### 2. Deploy P6 Applications
+### Step 2: Configure BREBootStrap.xml
 
-```bash
-chmod +x deploy_p6_apps.sh deploy_p6_apps.py
-./deploy_p6_apps.sh
-```
+The BREBootStrap.xml file in /u01/app/eppm/p6 contains the database connection information. Verify this file has the correct database hostname, port, service name, and credentials for your P6 database.
 
-### 3. Verify Deployment
+### Step 3: Configure Server Arguments
 
-```bash
-chmod +x verify-deployment.sh
-./verify-deployment.sh
-```
+Before deploying the applications, configure the Java arguments for the P6 Web managed servers. These settings optimize memory and configure the bootstrap location.
 
-## Configuration
-
-Edit the configuration section at the top of each script to match your environment:
-
-### deploy_p6_apps.py
-
-```python
-# WebLogic Admin Server Connection
-ADMIN_HOST = 'prmapp01'
-ADMIN_PORT = '7001'
-
-# P6 EPPM Installation Base
-EPPM_HOME = '/u01/app/eppm'
-```
-
-### verify-deployment.sh
-
-```bash
-# Host Configuration
-PRMAPP01="prmapp01"
-PRMAPP02="prmapp02"
-
-# Port Configuration
-P6_PORT_APP01=7010
-P6_PORT_APP02=7011
-# ... etc
-```
-
-## Application Deployment Map
-
-| Application | Source Path | Target Cluster | Context Path |
-|-------------|-------------|----------------|--------------|
-| p6 | /u01/app/eppm/p6/p6.ear | p6web_cluster | /p6 |
-| p6tm | /u01/app/eppm/tmws/p6tm.ear | p6tm_cluster | /p6tm |
-| p6ws | /u01/app/eppm/ws/server/p6ws.ear | p6ws_cluster | /p6ws |
-| p6procloudconnect | /u01/app/eppm/p6procloudconnect/p6procloudconnect.war | p6cc_cluster | /p6procloudconnect |
-
-## Java Arguments Reference
-
-These arguments must be configured in WebLogic Console → Servers → [server] → Configuration → Server Start → Arguments **before** deploying applications.
-
-### P6 Web Servers
+Connect to the WebLogic Admin Console at http://prmapp01:7001/console and navigate to Servers, then p6web_ms1, then Configuration, then Server Start. In the Arguments field, enter:
 
 ```
--server -Dprimavera.bootstrap.home=/u01/app/eppm/p6 -Djava.awt.headless=true -Djavax.xml.stream.XMLInputFactory=com.ctc.wstx.stax.WstxInputFactory -Xms4096m -Xmx4096m -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:GCTimeRatio=19 -XX:NewSize=256m -XX:MaxNewSize=256m -XX:SurvivorRatio=8
+-server -Dprimavera.bootstrap.home=/u01/app/eppm/p6 -Djava.awt.headless=true -Djavax.xml.stream.XMLInputFactory=com.ctc.wstx.stax.WstxInputFactory -Xms4096m -Xmx4096m -XX:+UseParallelGC -XX:GCTimeRatio=19 -XX:NewSize=256m -XX:MaxNewSize=256m -XX:SurvivorRatio=8
 ```
 
-### Team Member Servers
+Repeat for p6web_ms2 with the same arguments. Save and activate the changes, then restart both p6web servers.
 
-```
--Dprimavera.bootstrap.home=/u01/app/eppm/tmws
-```
+### Step 4: Deploy Applications
 
-### Web Services Servers
+Deploy each application through the WebLogic Admin Console. Navigate to Deployments, click Install, and browse to the application file location. Select the appropriate cluster as the target.
 
-```
--Djavax.xml.soap.MessageFactory=com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl -Djavax.xml.soap.SOAPConnectionFactory=weblogic.wsee.saaj.SOAPConnectionFactoryImpl -Dprimavera.bootstrap.home=/u01/app/eppm/ws
-```
+For P6 Web, install /u01/app/eppm/p6/p6.ear and target p6web_cluster. For Team Member, install /u01/app/eppm/tmws/p6tm.war and target p6tm_cluster. For Web Services, install /u01/app/eppm/ws/p6ws.ear and target p6ws_cluster. For Cloud Connect, install /u01/app/eppm/p6procloudconnect/p6procloudconnect.war and target p6cc_cluster.
 
-### Cloud Connect Servers
+After deploying each application, start it and verify it shows as Active.
 
-```
--Dprimavera.bootstrap.home=/u01/app/eppm/p6procloudconnect
-```
+### Step 5: Verify Deployment
+
+Test each application by accessing its URL:
+
+P6 Web: http://prmapp01:7010/p6
+Team Member: http://prmapp01:7030/p6tm
+Web Services: http://prmapp01:7020/p6ws
+Cloud Connect: http://prmapp01:7040/p6procloudconnect
+
+You should see the P6 login page for P6 Web and Team Member. Web Services will show a service endpoint page. Cloud Connect will respond with a connection status.
+
+## Application-Specific Settings
+
+### P6 Web Configuration
+
+The P6 Web application reads its configuration from the BREBootStrap.xml file specified by the primavera.bootstrap.home system property. This file must be accessible from both p6web_ms1 and p6web_ms2, so ensure /u01/app/eppm is available on both hosts (either through shared storage or identical local copies).
+
+### Team Member Configuration
+
+Team Member shares the same database as P6 Web but uses a separate WebLogic configuration. The bootstrap location should point to the same BREBootStrap.xml file used by P6 Web.
+
+### Web Services Configuration
+
+Web Services requires its own bootstrap configuration. Configure the P6WSBootStrap.xml in the /u01/app/eppm/ws directory with the database connection details.
+
+### Cloud Connect Configuration
+
+Cloud Connect acts as a relay between P6 Professional desktop clients and the P6 database. Ensure your firewall allows connections on port 7040 from client machines.
 
 ## Troubleshooting
 
-### Connection Refused
+### Application Fails to Start
 
-- Verify Admin Server is running
-- Check firewall rules for port 7001
+Check the managed server logs in /u01/app/weblogic/user_projects/domains/eppm_domain/servers/[server_name]/logs/ for error messages. Common issues include incorrect bootstrap file paths, database connectivity problems, or missing JDBC drivers.
 
-### Deployment Fails
+### Database Connection Errors
 
-- Verify source EAR/WAR files exist
-- Check WebLogic server logs: `$DOMAIN_HOME/servers/<server>/logs/`
-- Ensure Java arguments are configured before deployment
+Verify the BREBootStrap.xml file has correct database connection details. Test the connection using sqlplus or a similar tool to confirm network connectivity and credentials.
 
-### Application Starts but Returns Errors
+### Out of Memory Errors
 
-- Verify BREBootstrap.xml exists in each component directory
-- Test database connectivity from application hosts
-- Check bootstrap database credentials
+If you see OutOfMemoryError in the logs, increase the heap size in the server arguments. The default settings allocate 4GB, but larger deployments may require more.
 
-## Series Navigation
+### Bootstrap File Not Found
 
-| Part | Title | Status |
-|------|-------|--------|
-| 0 | Architecture Overview | ✅ Published |
-| 1 | VM Preparation & SSL | ✅ Published |
-| 2 | WebLogic Installation | ✅ Published |
-| 3 | WebLogic Domain | ✅ Published |
-| 4 | Service Management | ✅ Published |
-| **5** | **P6 EPPM Deployment** | 📍 Current |
-| 6 | SSO Infrastructure | Coming soon |
-| 7 | SAML Integration | Coming soon |
-| 8 | Validation & Wrap-up | Coming soon |
+Ensure the primavera.bootstrap.home system property points to the correct directory containing BREBootStrap.xml. The path must be absolute and accessible from all cluster members.
 
-## License
+## High Availability Considerations
 
-These scripts are provided as-is for educational purposes. Use at your own risk.
+With applications deployed to clusters, traffic can be distributed across the managed server instances. For production deployments, configure a load balancer (such as HAProxy or F5) to distribute requests across the cluster members.
 
-## Support
+Session affinity (sticky sessions) is recommended for P6 Web to ensure a user's session stays on the same managed server throughout their work.
 
-Questions? Reach out at [integrationfaces.com/contact](https://integrationfaces.com/contact)
+## Next Steps
+
+With P6 EPPM deployed and accessible, proceed to Part 6: SSO Infrastructure to configure Keycloak, Samba AD, and prepare for SAML-based single sign-on.
 
 ---
 
-*Integration Faces — Enterprise P6 EPPM Solutions*
+**Zero to Enterprise: P6 EPPM 25.12 with SSO**  
+[Integration Faces](https://integrationfaces.com) | [Full Blog Series](https://integrationfaces.com/blog)

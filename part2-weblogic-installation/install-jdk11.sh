@@ -1,9 +1,9 @@
 #!/bin/bash
 #===============================================================================
-# install-jdk17.sh
+# install-jdk11.sh
 # Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 2
 # 
-# Installs Oracle JDK 17 and configures environment variables.
+# Installs Oracle JDK 11 and configures environment variables.
 # Run as oracle user on both prmapp01 and prmapp02.
 #
 # Integration Faces - https://integrationfaces.com
@@ -18,7 +18,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN}  Oracle JDK 17 Installation${NC}"
+echo -e "${GREEN}  Oracle JDK 11 Installation${NC}"
 echo -e "${GREEN}  Zero to Enterprise - Part 2${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
@@ -26,9 +26,9 @@ echo ""
 # Configuration
 STAGE_DIR="/u01/stage"
 JAVA_BASE="/u01/app/java"
-JDK_ARCHIVE="jdk-17.0.17_linux-x64_bin.tar.gz"
-JDK_VERSION="jdk-17.0.17"
-JDK_LINK="jdk17"
+JDK_ARCHIVE="jdk-11.0.25_linux-x64_bin.tar.gz"
+JDK_VERSION="jdk-11.0.25"
+JDK_LINK="jdk11"
 
 # Check if running as oracle
 if [ "$(whoami)" != "oracle" ]; then
@@ -39,7 +39,7 @@ fi
 # Check if JDK archive exists
 if [ ! -f "${STAGE_DIR}/${JDK_ARCHIVE}" ]; then
   echo -e "${RED}ERROR: JDK archive not found: ${STAGE_DIR}/${JDK_ARCHIVE}${NC}"
-  echo "Please download Oracle JDK 17 and place it in ${STAGE_DIR}"
+  echo "Please download Oracle JDK 11 and place it in ${STAGE_DIR}"
   exit 1
 fi
 
@@ -70,8 +70,8 @@ if grep -q "JAVA_HOME" ~/.bash_profile 2>/dev/null; then
 else
     cat >> ~/.bash_profile << 'EOF'
 
-# Java Environment - Added by install-jdk17.sh
-export JAVA_HOME=/u01/app/java/jdk17
+# Java Environment - Added by install-jdk11.sh
+export JAVA_HOME=/u01/app/java/jdk11
 export PATH=$JAVA_HOME/bin:$PATH
 EOF
     echo -e "  Added JAVA_HOME to .bash_profile"

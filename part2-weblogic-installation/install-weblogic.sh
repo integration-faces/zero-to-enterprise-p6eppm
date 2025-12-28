@@ -3,7 +3,7 @@
 # install-weblogic.sh
 # Zero to Enterprise: P6 EPPM 25.12 with SSO - Part 2
 # 
-# Installs Oracle WebLogic Server 14.1.2 in silent mode.
+# Installs Oracle WebLogic Server 14.1.1 in silent mode.
 # Run as oracle user on both prmapp01 and prmapp02.
 #
 # Integration Faces - https://integrationfaces.com
@@ -18,7 +18,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN}  Oracle WebLogic 14.1.2 Installation${NC}"
+echo -e "${GREEN}  Oracle WebLogic 14.1.1 Installation${NC}"
 echo -e "${GREEN}  Zero to Enterprise - Part 2${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
@@ -27,9 +27,9 @@ echo ""
 STAGE_DIR="/u01/stage"
 MW_HOME="/u01/app/weblogic"
 INV_DIR="/u01/app/oraInventory"
-JAVA_HOME="/u01/app/java/jdk17"
-WLS_ZIP="V1045131-01.zip"
-WLS_JAR="fmw_14.1.2.0.0_wls.jar"
+JAVA_HOME="/u01/app/java/jdk11"
+WLS_ZIP="V994956-01.zip"
+WLS_JAR="fmw_14.1.1.0.0_wls.jar"
 
 # Check if running as oracle
 if [ "$(whoami)" != "oracle" ]; then
@@ -40,14 +40,14 @@ fi
 # Check if JAVA_HOME is set and valid
 if [ ! -d "$JAVA_HOME" ]; then
   echo -e "${RED}ERROR: JAVA_HOME not found: ${JAVA_HOME}${NC}"
-  echo "Please run install-jdk17.sh first"
+  echo "Please run install-jdk11.sh first"
   exit 1
 fi
 
 # Check if WebLogic ZIP exists
 if [ ! -f "${STAGE_DIR}/${WLS_ZIP}" ]; then
   echo -e "${RED}ERROR: WebLogic installer not found: ${STAGE_DIR}/${WLS_ZIP}${NC}"
-  echo "Please download WebLogic Server 14.1.2 from Oracle eDelivery and place it in ${STAGE_DIR}"
+  echo "Please download WebLogic Server 14.1.1 from Oracle eDelivery and place it in ${STAGE_DIR}"
   exit 1
 fi
 

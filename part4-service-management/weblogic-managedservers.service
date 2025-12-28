@@ -1,0 +1,28 @@
+[Unit]
+Description=WebLogic Managed Servers for P6 EPPM
+After=weblogic-nodemanager.service
+Wants=weblogic-nodemanager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=oracle
+Group=oinstall
+
+# Environment variables for WLST
+Environment="JAVA_HOME=/u01/app/java/jdk11"
+Environment="MW_HOME=/u01/app/weblogic"
+Environment="ORACLE_HOME=/u01/app/weblogic"
+
+# Start managed servers using WLST with encrypted credential store
+ExecStart=/u01/app/weblogic/oracle_common/common/bin/wlst.sh /u01/app/eppm/scripts/start-managed-servers.py
+
+# Stop managed servers using WLST with encrypted credential store
+ExecStop=/u01/app/weblogic/oracle_common/common/bin/wlst.sh /u01/app/eppm/scripts/stop-managed-servers.py
+
+# Timeouts
+TimeoutStartSec=600
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target
